@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collect the Stars</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let player = { x: canvas.width / 2, y: canvas.height / 2, radius: 20, color: "blue", speed: 5 };
+        let stars = [];
+        let enemies = [];
+        let score = 0;
+        let keys = {};
+
+        function drawCircle(x, y, radius, color) {
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            ctx.fillStyle = color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function createStar() {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: 10,
+                color: "yellow"
+            });
+        }
+
+        function createEnemy() {
+            enemies.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: 15,
+                color: "red",
+                speedX: (Math.random() - 0.5) * 4,
+                speedY: (Math.random() - 0.5) * 4
+            });
+        }
+
+        function moveEnemies() {
+            for (let enemy of enemies) {
+                enemy.x += enemy.speedX;
+                enemy.y += enemy.speedY;
+
+                if (enemy.x < 0 || enemy.x > canvas.width) enemy.speedX *= -1;
+                if (enemy.y < 0 || enemy.y > canvas.height) enemy.speedY *= -1;
+            }
+        }
+
+        function checkCollision(circle1, circle2) {
+            const dx = circle1.x - circle2.x;
+            const dy = circle1.y - circle2.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < circle1.radius + circle2.radius;
+        }
+
+        function handlePlayerMovement() {
+            if (keys["ArrowUp"] && player.y - player.radius > 0) player.y -= player.speed;
+            if (keys["ArrowDown"] && player.y + player.radius < canvas.height) player.y += player.speed;
+            if (keys["ArrowLeft"] && player.x - player.radius > 0) player.x -= player.speed;
+            if (keys["ArrowRight"] && player.x + player.radius < canvas.width) player.x += player.speed;
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            handlePlayerMovement();
+
+            // Draw player
+            drawCircle(player.x, player.y, player.radius, player.color);
+
+            // Draw stars and check for collection
+            for (let i = 0; i < stars.length; i++) {
+                drawCircle(stars[i].x, stars[i].y, stars[i].radius, stars[i].color);
+                if (checkCollision(player, stars[i])) {
+                    stars.splice(i, 1);
+                    score += 10;
+                    i--;
+                }
+            }
+
+            // Draw and move enemies
+            for (let enemy of enemies) {
+                drawCircle(enemy.x, enemy.y, enemy.radius, enemy.color);
+                if (checkCollision(player, enemy)) {
+                    alert(`Game Over! Your score: ${score}`);
+                    document.location.reload();
+                }
+            }
+
+            moveEnemies();
+
+            // Display score
+            ctx.fillStyle = "black";
+            ctx.font = "20px Arial";
+            ctx.fillText(`Score: ${score}`, 10, 30);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener("keydown", (e) => {
+            keys[e.key] = true;
+        });
+
+        window.addEventListener("keyup", (e) => {
+            keys[e.key] = false;
+        });
+
+        // Initialize game
+        setInterval(createStar, 1000);
+        setInterval(createEnemy, 2000);
+        gameLoop();
+    </script>
+</body>
+</html>
